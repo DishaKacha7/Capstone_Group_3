@@ -7,8 +7,6 @@ def optimize_xgboost(X_train, y_train):
         'n_estimators': [100, 200, 300],
         'max_depth': [3, 5, 7],
         'learning_rate': [0.01, 0.1, 0.2],
-        'subsample': [0.8, 1.0],
-        'colsample_bytree': [0.8, 1.0]
     }
 
     xgb_model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss', n_jobs=-1)

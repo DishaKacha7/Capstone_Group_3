@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 class ModelEvaluator:
     def __init__(self):
@@ -21,15 +21,20 @@ class ModelEvaluator:
             model.train(X_train_scaled, y_train)
             y_pred = model.predict(X_test_scaled)
             conf_matrix = confusion_matrix(y_test, y_pred)
+            row_sums = conf_matrix.sum(axis=1, keepdims=True)
+            conf_matrix_pct = (conf_matrix / row_sums) * 100
+            conf_matrix_pct = np.nan_to_num(conf_matrix_pct)  # Handle division by zero
             print(f"\n{name} Results:")
             print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
             print(f"Cohen's Kappa Score: {cohen_kappa_score(y_test, y_pred):.4f}")
             print("\nClassification Report:")
             print(classification_report(y_test, y_pred, target_names=le.classes_))
             plt.figure(figsize=(10, 8))
-            sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=le.classes_,
+            labels = [f'{val:.1f}%' for val in conf_matrix_pct.flatten()]
+            labels = np.array(labels).reshape(conf_matrix_pct.shape)
+            sns.heatmap(conf_matrix_pct, annot=labels, fmt='', cmap='Blues', xticklabels=le.classes_,
                         yticklabels=le.classes_)
-            plt.title(f'Confusion Matrix - {name}')
+            plt.title(f'Confusion Matrix  - {name}')
             plt.xlabel('Predicted')
             plt.ylabel('True')
             plt.xticks(rotation=45, ha='right')
@@ -40,9 +45,13 @@ class ModelEvaluator:
                 'accuracy': accuracy_score(y_test, y_pred),
                 'cohen_kappa': cohen_kappa_score(y_test, y_pred),
                 'confusion_matrix': conf_matrix,
+                'confusion_matrix_pct': conf_matrix_pct,
                 'predictions': y_pred
             }
         return results, self.scaler
+
+
+
 
 class ModelSaver:
     @staticmethod
