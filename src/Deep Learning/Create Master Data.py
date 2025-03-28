@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+## Description :
+## This code is to use the geojson patch file to assign band intensity values from each month for each point in the image.
 import os
 import numpy as np
 import pandas as pd
@@ -9,12 +9,12 @@ from rasterio.mask import mask
 from shapely.geometry import mapping
 
 # ---------------------------------------------------------------------
-# 1) PARAMETERS & FILE PATHS
+# 1) Params
 # ---------------------------------------------------------------------
-# The directory containing 6 subfolders (one per band), each with .tif files
+# The directory containing 6 subfolders (one per band), each with .tif files.
 BOX_DIR = "/home/ubuntu/box/SA_raw_imagery"
 
-# The patch-level GeoJSON where each feature = one patch polygon
+# The patch-level GeoJSON created using the Create_patches code
 PATCH_GEOJSON = "patch_level.geojson"
 
 # Final output Parquet
@@ -22,14 +22,12 @@ OUTPUT_PARQUET = "/home/ubuntu/sai/Capstone_Group_3/src/Data/patch_level_data.pa
 
 
 # ---------------------------------------------------------------------
-# 2) FUNCTION TO RECURSIVELY FIND ALL .TIF UNDER BOX_DIR
+# 2) Listing all the files in the folder downloaded from box
 # ---------------------------------------------------------------------
 def find_raster_files(root_dir):
     """
     Recursively search 'root_dir' for all .tif files, build a dictionary:
         { "filename_without_extension": "/full/path/to/file.tif", ... }
-    If the same filename appears more than once, the last one found
-    overwrites the previous in the dictionary. (You can handle duplicates if needed.)
     """
     raster_dict = {}
     for dirpath, dirnames, filenames in os.walk(root_dir):
@@ -44,7 +42,7 @@ def find_raster_files(root_dir):
 
 
 # ---------------------------------------------------------------------
-# 3) COLLATE PATCH DATA
+# 3) Collating patch data
 # ---------------------------------------------------------------------
 def collate_patch_data(patch_geojson, raster_files, output_parquet):
     """
@@ -60,13 +58,11 @@ def collate_patch_data(patch_geojson, raster_files, output_parquet):
     print("CRS:", gdf.crs)
     print("Bounds:", gdf.total_bounds)
 
-    # If we have no rasters, there's nothing to do
     if not raster_files:
         print("No .tif files were found in the BOX_DIR. Exiting...")
         return pd.DataFrame()
 
     # Reproject patches to match the first raster's CRS
-    # We'll pick the first item in raster_files as the reference
     ref_raster = next(iter(raster_files.values()))
     with rasterio.open(ref_raster) as src_ref:
         raster_crs = src_ref.crs
@@ -77,10 +73,8 @@ def collate_patch_data(patch_geojson, raster_files, output_parquet):
 
     rows_list = []
 
-    print("\nMasking each patch. This may take a while if many patches...")
-    # Loop over each patch feature
+    print("\nMasking each patch. This takes time to run")
     for idx, patch_row in gdf.iterrows():
-        # If you already have a 'patch_id' in the GeoJSON, use patch_row["patch_id"].
         patch_id = idx + 1
         field_id = patch_row.get("field_id", None)
         crop_name = patch_row.get("crop_name", None)
@@ -93,11 +87,10 @@ def collate_patch_data(patch_geojson, raster_files, output_parquet):
             # Read & mask
             with rasterio.open(tif_path) as src:
                 out_image, out_transform = mask(src, geom, crop=True)
-                # out_image shape => (1, height, width) if single band
                 band_arrays[band_key] = out_image[0]
 
         # Flatten pixel arrays
-        sample_shape = next(iter(band_arrays.values())).shape  # (H, W)
+        sample_shape = next(iter(band_arrays.values())).shape
         H, W = sample_shape
 
         flattened_bands = {bk: band_arrays[bk].flatten() for bk in band_arrays}
@@ -123,7 +116,7 @@ def collate_patch_data(patch_geojson, raster_files, output_parquet):
     print("Columns in DataFrame:", df.columns.tolist())
     print("\nHead:\n", df.head(5))
 
-    # Basic stats
+    # Printing some counts to sanity check the final data structure
     print("\nValue counts of patch_id (top 10):")
     print(df["patch_id"].value_counts().head(10))
     print("\nValue counts of field_id (top 10):")
@@ -131,7 +124,7 @@ def collate_patch_data(patch_geojson, raster_files, output_parquet):
     print("\nValue counts of crop_name (top 10):")
     print(df["crop_name"].value_counts(dropna=False).head(10))
 
-    # Save to Parquet
+    # Saving
     os.makedirs(os.path.dirname(output_parquet), exist_ok=True)
     df.to_parquet(output_parquet, index=False)
     print(f"\nSaved patch-level data to: {output_parquet}")
@@ -139,7 +132,7 @@ def collate_patch_data(patch_geojson, raster_files, output_parquet):
     return df
 
 # ---------------------------------------------------------------------
-# 4) MAIN
+# 4) Main
 # ---------------------------------------------------------------------
 def main():
     # 1) Recursively find all .tif under BOX_DIR
