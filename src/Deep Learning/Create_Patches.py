@@ -1,4 +1,6 @@
 #%%
+## -- Description --
+## Code to create square patches from Geojson file of combined fields
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,14 +9,18 @@ from shapely.geometry import box
 
 def main():
     # -----------------------------------------------------
-    # 1) PARAMETERS
+    # 1) Parameters
     # -----------------------------------------------------
+    # Path hard coded for now, to be updated
+
     geojson_path = "/home/ubuntu/sai/Capstone_Group_3/src/combined_fields.geojson"
-    patch_size = 100.0  # in map units
+    patch_size = 100.0  # size is set in map units
+    
+    # Path hard coded for now, to be updated
     patches_geojson_out = "/home/ubuntu/sai/Capstone_Group_3/src/Deep Learning/patch_level.geojson"
 
     # -----------------------------------------------------
-    # 2) LOAD THE FIELDS & PLOT
+    # 2) Loading the fields and plotting the polygons
     # -----------------------------------------------------
     gdf = gpd.read_file(geojson_path)
     print("Original fields GeoDataFrame:")
@@ -28,13 +34,13 @@ def main():
     plt.show()
 
     # -----------------------------------------------------
-    # 3) CREATE PATCHES PER FIELD
+    # 3) Iterating over each field polygon and assigning patches
     # -----------------------------------------------------
     patches_list = []
 
     for idx, field in gdf.iterrows():
         field_id = idx + 1
-        crop_name = field["crop_name"]  # or adjust if different
+        crop_name = field["crop_name"]
         field_geom = field.geometry
 
         # Field bounding box
@@ -58,23 +64,22 @@ def main():
                         "geometry": patch_poly
                     })
 
-    # Create a GeoDataFrame of patches
+    # Create a GeoDataFrame of all the patches created
     patches_gdf = gpd.GeoDataFrame(patches_list, crs=gdf.crs)
     print(f"\nCreated {len(patches_gdf)} patches (fully inside their fields).")
 
     # -----------------------------------------------------
-    # 4) PLOT THE PATCHES OVER THE FIELDS
+    # 4) Plotting the patches made, to verify the validity
     # -----------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 8))
-    # Plot the original field boundaries
+ 
     # gdf.boundary.plot(ax=ax, color='black', linewidth=1)
-    # Plot the patches in some semi-transparent color
     patches_gdf.plot(ax=ax, color='red', alpha=0.5, edgecolor='red')
     ax.set_title("Field Boundaries with Patch Grid")
     plt.show()
 
     # -----------------------------------------------------
-    # 5) SAVE THE PATCHES
+    # 5) Saving the patches
     # -----------------------------------------------------
     if patches_geojson_out:
         patches_gdf.to_file(patches_geojson_out, driver='GeoJSON')
@@ -95,7 +100,6 @@ else:
     subset = patches_gdf
 
 fig, ax = plt.subplots(figsize=(10, 8))
-# gdf.boundary.plot(ax=ax, color='black', linewidth=1)
 subset.plot(ax=ax, color='red', alpha=0.7, edgecolor='white')
 ax.set_title(f"Random Subset of {num_to_sample} Patches")
 plt.show()
