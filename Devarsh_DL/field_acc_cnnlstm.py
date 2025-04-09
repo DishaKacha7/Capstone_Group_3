@@ -1,0 +1,160 @@
+# ==================== Step 1: Imports ====================
+import pandas as pd
+import numpy as np
+import torch
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
+from sklearn.metrics import accuracy_score, f1_score, cohen_kappa_score, classification_report
+from sklearn.preprocessing import LabelEncoder
+import random
+from collections import Counter
+from torchtoolbox.nn import FocalLoss
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+
+print("[INFO] Libraries imported.")
+
+# ==================== Step 2: Dataset Loading ====================
+df = pd.read_parquet("merged_dl_258_259.parquet")
+label_encoder = LabelEncoder()
+df['label'] = label_encoder.fit_transform(df['crop_name'])
+
+feature_cols = [col for col in df.columns if any(b in col for b in ['B2_', 'B6_', 'B11_', 'B12_', 'hue_', 'EVI_'])]
+test_fids = df['fid'].unique()
+
+print("[INFO] Dataset loaded and labels encoded.")
+
+# ==================== Step 3: Dataset ====================
+class CropDataset(Dataset):
+    def __init__(self, df, feature_cols):
+        self.X = df[feature_cols].values.astype(np.float32)
+        self.fids = df['fid'].values
+
+    def __len__(self):
+        return len(self.fids)
+
+    def __getitem__(self, idx):
+        return torch.tensor(self.X[idx]), self.fids[idx]
+
+# ==================== Step 4: Model Definition ====================
+class CropCNNBiLSTM(nn.Module):
+    def __init__(self, input_size, num_classes, conv_filters=64, lstm_hidden=64, kernel_size=5, dropout=0.3):
+        super().__init__()
+        self.conv1 = nn.Conv1d(6, conv_filters, kernel_size, padding=kernel_size // 2)
+        self.relu = nn.ReLU()
+        self.bilstm = nn.LSTM(input_size=conv_filters, hidden_size=lstm_hidden, num_layers=1,
+                              batch_first=True, bidirectional=True)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(2 * lstm_hidden, num_classes)
+
+    def forward(self, x):
+        x = x.view(x.size(0), 6, -1)
+        x = self.relu(self.conv1(x))
+        x = x.permute(0, 2, 1)
+        x, _ = self.bilstm(x)
+        x = x[:, -1, :]
+        x = self.dropout(x)
+        return self.fc(x)
+
+# ==================== Step 5: Load Models & Predict ====================
+print("[INFO] Loading saved models...")
+models = []
+for seed in range(5):
+    model = CropCNNBiLSTM(len(feature_cols), df['label'].nunique())
+    model.load_state_dict(torch.load(f"model_seed_{seed}_25epochs.pt"))
+    model.eval()
+    models.append(model)
+print("[INFO] All models loaded.")
+
+# ==================== Step 6: Predict per Point ====================
+
+fids = df['fid'].unique()
+train_fids, test_fids = train_test_split(fids, test_size=0.2, random_state=42)
+train_fids, val_fids = train_test_split(train_fids, test_size=0.1, random_state=42)
+val_df = df[df['fid'].isin(val_fids)].reset_index(drop=True)
+test_df = df[df['fid'].isin(test_fids)].reset_index(drop=True)
+
+
+val_dataset = CropDataset(val_df, feature_cols)
+val_loader = DataLoader(val_dataset, batch_size=256, shuffle=False)
+
+val_preds, val_fids_list = [], []
+
+with torch.no_grad():
+    for X_batch, fid_batch in val_loader:
+        logits_ensemble = torch.stack([m(X_batch) for m in models])
+        mean_logits = logits_ensemble.mean(dim=0)
+        preds = torch.argmax(mean_logits, dim=1)
+        val_preds.extend(preds.tolist())
+        val_fids_list.extend(fid_batch.tolist())
+
+
+test_dataset = CropDataset(test_df, feature_cols)
+test_loader = DataLoader(test_dataset, batch_size=256, shuffle=False)
+
+all_preds = []
+all_fids = []
+
+with torch.no_grad():
+    for X_batch, fid_batch in test_loader:
+        logits_ensemble = torch.stack([m(X_batch) for m in models])
+        mean_logits = logits_ensemble.mean(dim=0)
+        preds = torch.argmax(mean_logits, dim=1)
+        all_preds.extend(preds.tolist())
+        all_fids.extend(fid_batch.tolist())
+
+# ==================== Step 7: Field-Level Aggregation ====================
+print("[INFO] Aggregating validation predictions to field-level...")
+val_preds_df = pd.DataFrame({
+    'fid': val_fids_list,
+    'pred_label': val_preds
+})
+val_fid_label_map = val_df.groupby('fid')['label'].agg(lambda x: Counter(x).most_common(1)[0][0])
+val_field_preds = val_preds_df.groupby('fid')['pred_label'].agg(lambda x: Counter(x).most_common(1)[0][0])
+val_field_true = val_fid_label_map.loc[val_field_preds.index]
+print("[INFO] Aggregating predictions to field-level...")
+pixel_preds_df = pd.DataFrame({
+    'fid': all_fids,
+    'pred_label': all_preds
+})
+
+# Get true label per field
+fid_label_map = test_df.groupby('fid')['label'].agg(lambda x: Counter(x).most_common(1)[0][0])
+field_preds = pixel_preds_df.groupby('fid')['pred_label'].agg(lambda x: Counter(x).most_common(1)[0][0])
+field_true = fid_label_map.loc[field_preds.index]
+
+# ==================== Step 8: Evaluate ====================
+
+print("[VALIDATION FIELD-LEVEL EVALUATION]")
+print("Accuracy:", accuracy_score(val_field_true, val_field_preds))
+print("F1 Score:", f1_score(val_field_true, val_field_preds, average='weighted'))
+print("Cohen Kappa:", cohen_kappa_score(val_field_true, val_field_preds))
+print("Classification Report:", classification_report(val_field_true, val_field_preds, target_names=label_encoder.classes_))
+
+# Confusion matrix for validation
+val_cm = confusion_matrix(val_field_true, val_field_preds)
+plt.figure(figsize=(8, 6))
+sns.heatmap(val_cm, annot=True, fmt='d', cmap='Greens', xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.title('Validation Field-Level Confusion Matrix')
+plt.tight_layout()
+plt.show()
+
+print("[FIELD-LEVEL EVALUATION]")
+print("Accuracy:", accuracy_score(field_true, field_preds))
+print("F1 Score:", f1_score(field_true, field_preds, average='weighted'))
+print("Cohen Kappa:", cohen_kappa_score(field_true, field_preds))
+print("Classification Report:", classification_report(field_true, field_preds, target_names=label_encoder.classes_))
+
+# Plot confusion matrix
+cm = confusion_matrix(field_true, field_preds)
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.title('Field-Level Confusion Matrix')
+plt.tight_layout()
+plt.show()
