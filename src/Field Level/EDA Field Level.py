@@ -1,12 +1,6 @@
-#!/usr/bin/env python3
-"""
-Field‑level EDA for scientific paper.
 
-• Reads 'field_data.parquet' (one record per field with crop_name, SHAPE_AREA, SHAPE_LEN, band*_median…)
-• Plots:
-    1) Count of fields by crop type
-    2) Average Field Area by crop type (descending)
-    3) Clustered bar chart of mean band_median values per spectral band (x‑axis=bands, hue=crops)
+"""
+Field‑level EDA.
 """
 
 import pandas as pd
@@ -14,9 +8,8 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# ─────────── CONFIG ────────────
+# path to 
 FIELD_PARQUET = "field_data.parquet"
-# ─────────────────────────────────
 
 def main():
     # 1) Load field‑level data
@@ -27,14 +20,11 @@ def main():
     band_cols   = [c for c in df.columns if c.endswith("_median")]
     band_labels = [c.rsplit("_median", 1)[0] for c in band_cols]
 
-    # 3) Crop order by frequency (for plot 1)
+    # 3) Crop order by frequency 
     crop_order = df['crop_name'].value_counts().index.tolist()
-
-    # 4) Seaborn style & palette
     sns.set_theme(style="whitegrid", context="paper")
     palette = sns.color_palette("colorblind")
 
-    # --- Plot 1: Number of fields per crop type ---
     plt.figure(figsize=(8,5))
     ax1 = sns.countplot(
         data=df,
@@ -49,7 +39,6 @@ def main():
     plt.tight_layout()
     plt.show()
 
-    # --- Plot 2: Average Field Area by crop type (descending) ---
     area_df = (
         df.groupby('crop_name')['SHAPE_AREA']
           .mean()
@@ -65,19 +54,16 @@ def main():
     )
     ax2.set_title("Average Field Area by Crop Type", fontsize=14)
     ax2.set_xlabel("Crop Type", fontsize=12)
-    ax2.set_ylabel("Field Area", fontsize=12)  # renamed y-axis
+    ax2.set_ylabel("Field Area", fontsize=12)
     ax2.tick_params(axis='x', rotation=45)
     plt.tight_layout()
     plt.show()
 
-    # --- Plot 3: Clustered bar chart of mean band values per spectral band ---
-    # Compute mean of each band per crop
     mean_bands = df.groupby('crop_name')[band_cols].mean().loc[crop_order]
-    # Transpose to bands x crops
+    
     tb = mean_bands.T
-    tb.index = band_labels  # rename index to short band names
+    tb.index = band_labels  
 
-    # Melt for seaborn
     melted = (
         tb.reset_index()
           .melt(id_vars='index', var_name='Crop Type', value_name='Mean Value')
