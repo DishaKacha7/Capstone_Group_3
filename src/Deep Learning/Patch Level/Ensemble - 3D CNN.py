@@ -22,10 +22,10 @@ PATCH_PARQUET = "updated_patch_level_data.parquet"
 TARGET_SIZE = (128, 128)
 BATCH_SIZE = 8
 EPOCHS = 20
-BASE_MODEL_SAVE_DIR = "/home/ubuntu/sai/Capstone_Group_3/src/Models/BaseModels"
-ENSEMBLE_MODEL_PATH = "/home/ubuntu/sai/Capstone_Group_3/src/Models/meta_model.joblib"
-TRAIN_DF_PATH = "/home/ubuntu/sai/Capstone_Group_3/src/Data/train_df.pkl"
-TEST_DF_PATH = "/home/ubuntu/sai/Capstone_Group_3/src/Data/test_df.pkl"
+BASE_MODEL_SAVE_DIR = "."
+ENSEMBLE_MODEL_PATH = "meta_model.joblib"
+TRAIN_DF_PATH = "train_df.pkl"
+TEST_DF_PATH = "test_df.pkl"
 
 BAND_PREFIXES = ['SA_B11', 'SA_B12', 'SA_B2', 'SA_B6', 'SA_EVI', 'SA_hue']
 
