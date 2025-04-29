@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 """
-Standalone inference script for the Transformer‐based time‐aware patch classifier,
-now with chunked inference to limit peak memory use, and status prints per chunk.
-
-• Loads saved weights from transformer_time_model.h5
-• Reads parquet, drops NaN‐columns, reconstructs patches → (T,128,128,B)
-• Runs per‐patch inference in chunks
-• Saves patch‐level CSV 'transformer_patch_predictions.csv'
-• Aggregates to fields via majority vote
-• Saves field‐level CSV 'field_level_predictions.csv'
-• Prints Accuracy & Cohen’s κ for both patch and field
+inference script for the Transformer‐based model
 """
 
 import math
@@ -21,9 +12,8 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, cohen_kappa_score
 from sklearn.model_selection import train_test_split
 
-# ─── CONFIG ────────────────────────────────────────────────────────────────
-PATCH_PARQUET = "/home/ubuntu/sai/Capstone_Group_3/src/Data/updated_patch_level_data.parquet"
-WEIGHTS_FILE  = "/home/ubuntu/sai/Capstone_Group_3/src/Deep Learning/transformer_time_model.h5"
+PATCH_PARQUET = "updated_patch_level_data.parquet"
+WEIGHTS_FILE  = "transformer_time_model.h5"
 PATCH_OUT_CSV = "transformer_patch_predictions.csv"
 FIELD_OUT_CSV = "field_level_predictions.csv"
 TARGET_SIZE   = (128, 128)
@@ -31,7 +21,6 @@ TEST_SIZE     = 0.20
 SEED          = 42
 BAND_PREFIXES = ['SA_B11','SA_B12','SA_B2','SA_B6','SA_EVI','SA_hue']
 CHUNK_SIZE    = 32   # number of patches to process in one go
-# ─────────────────────────────────────────────────────────────────────────────
 
 def group_band_columns(cols, prefixes):
     mapping = {}
