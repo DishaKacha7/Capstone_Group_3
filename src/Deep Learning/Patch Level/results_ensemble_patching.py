@@ -1,13 +1,5 @@
-#!/usr/bin/env python3
 """
 Inference script for the labeled test set (using the pickled DataFrame from training).
-
-• Reads 'test_df.pkl' (contains patch‐level pixels + true 'crop_name')
-• Loads all 3-D CNN base models (*.h5), the meta-model, and the LabelEncoder
-• Reconstructs each patch, predicts patch-level with each base model, stacks probs
-• Meta-model predicts patch-level, then majority-votes per field
-• Saves CSV 'results_ensemble_patching.csv' (field_id, predicted)
-• Then computes and displays patch- and field-level Accuracy, Cohen’s κ, and confusion matrices
 """
 
 import os
@@ -27,16 +19,15 @@ from sklearn.metrics  import (
     confusion_matrix
 )
 
-# ─── PATHS ─────────────────────────────────────────────────────────────────────
-TEST_DF_PATH       = "/home/ubuntu/sai/Capstone_Group_3/src/Data/test_df.pkl"
-BASE_MODEL_DIR     = "/home/ubuntu/sai/Capstone_Group_3/src/Models/BaseModels"
-META_MODEL_PATH    = "/home/ubuntu/sai/Capstone_Group_3/src/Models/meta_model.joblib"
-LABEL_ENCODER_PATH = "/home/ubuntu/sai/Capstone_Group_3/src/Models/label_encoder.pkl"
+# Setting paths
+TEST_DF_PATH       = "test_df.pkl"
+BASE_MODEL_DIR     = "."
+META_MODEL_PATH    = "meta_model.joblib"
+LABEL_ENCODER_PATH = "label_encoder.pkl"
 OUTPUT_CSV         = "results_ensemble_patching.csv"
 
 BAND_PREFIXES = ["SA_B11","SA_B12","SA_B2","SA_B6","SA_EVI","SA_hue"]
 TARGET_SIZE   = (128,128)
-# ────────────────────────────────────────────────────────────────────────────────
 
 def group_band_columns(cols, prefixes):
     d = {}
