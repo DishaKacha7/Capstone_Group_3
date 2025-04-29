@@ -1,18 +1,6 @@
-#!/usr/bin/env python3
 """
 Inference script for the 3D‐CNN time‐aware patch classifier, with integrated
-patch‐level and corrected field‐level evaluation.
-
-• Re-splits the original parquet into train/test (seed=42)
-• Drops any band columns with NaNs (as in training)
-• Reconstructs each test patch into shape (T,128,128,6)
-• Loads conv3d_time_patch_level2.h5 and builds LabelEncoder from train split
-• Runs chunked inference over test patches
-• Saves patch‐level CSV 'patch_time_predictions.csv'
-• Prints patch‐level metrics and confusion matrix
-• Aggregates to fields via majority vote
-• Saves field‐level CSV 'field_time_predictions.csv'
-• Prints corrected field‐level metrics and confusion matrix
+patch‐level and field‐level evaluation.
 """
 
 import os, math, numpy as np, pandas as pd, tensorflow as tf
@@ -27,9 +15,9 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from collections import Counter
 
-# ─── CONFIG ────────────────────────────────────────────────────────────────
-PARQUET_PATH   = "/home/ubuntu/sai/Capstone_Group_3/src/Data/updated_patch_level_data.parquet"
-MODEL_PATH     = "/home/ubuntu/sai/Capstone_Group_3/src/Deep Learning/conv3d_time_patch_level2.h5"
+# Setting paths
+PARQUET_PATH   = "updated_patch_level_data.parquet"
+MODEL_PATH     = "conv3d_time_patch_level2.h5"
 PATCH_CSV      = "patch_time_predictions.csv"
 FIELD_CSV      = "field_time_predictions.csv"
 TARGET_SIZE    = (128,128)
@@ -37,7 +25,6 @@ TEST_SIZE      = 0.20
 SEED           = 42
 CHUNK_SIZE     = 64
 BAND_PREFIXES  = ['SA_B11','SA_B12','SA_B2','SA_B6','SA_EVI','SA_hue']
-# ─────────────────────────────────────────────────────────────────────────────
 
 def group_band_columns(cols, prefixes):
     mapping = {}
