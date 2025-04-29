@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 """
-Chunked inference script matching the original 2D-CNN training pipeline.
-
-• Reads '/home/ubuntu/sai/Capstone_Group_3/src/Data/updated_patch_level_data.parquet'
-• Drops any band columns containing NaNs (just as in training)
-• Splits by field_id (80/20, seed=42) to recreate test set
-• Reconstructs patches in chunks, resizes to 128×128×C
-• Loads 'patch_level_cnn.h5' and LabelEncoder (re-built from train split)
-• Runs model.predict() on each chunk; saves 'patch_level_predictions.csv'
-• Computes & prints Accuracy, Cohen’s κ, F1-Micro, F1-Macro, F1-Weighted, Entropy
-• Plots row-normalized (%) confusion matrix
+inference script matching the original 2D-CNN training pipeline.
 """
 
 import os, math, numpy as np, pandas as pd, tensorflow as tf
@@ -23,16 +14,14 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-# ─── CONFIG ────────────────────────────────────────────────────────────────
-PARQUET_PATH    = "/home/ubuntu/sai/Capstone_Group_3/src/Data/updated_patch_level_data.parquet"
-MODEL_PATH      = "/home/ubuntu/sai/Capstone_Group_3/src/Deep Learning/patch_level_cnn.h5"
+PARQUET_PATH    = "updated_patch_level_data.parquet"
+MODEL_PATH      = "patch_level_cnn.h5"
 
 OUTPUT_CSV      = "patch_level_predictions.csv"
 TARGET_SIZE     = (128,128)
 TEST_SIZE       = 0.20
 SEED            = 42
-CHUNK_SIZE      = 128  # adjust for memory
-# ─────────────────────────────────────────────────────────────────────────────
+CHUNK_SIZE      = 128  # for memory sigkill issues
 
 def patch_pixels_to_image(df_patch, channel_cols):
     r0,r1 = df_patch.row.min(), df_patch.row.max()
