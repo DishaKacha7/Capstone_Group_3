@@ -108,9 +108,7 @@ Capstone_Group_3-main/
 pip install -r requirements.txt
 ```
 
-2. Download and unzip the dataset as shown above.
-
-3. Run any model of your choice. Example:
+2. Run any model of your choice. Example:
 
 ```bash
 python classical_ml/xg_boost_hyper.py
@@ -145,7 +143,7 @@ Feel free to fork, improve, and create pull requests!
 
 ### Maintainer
 
-- Devarsh Apurva Sheth (George Washington University)
+- Devarsh Apurva Sheth, Disha Kacha, Sairam Venkatachalam (George Washington University)
 - Data Science Graduate Student
 - Passionate about Deep Learning and Remote Sensing 🚀
 
