@@ -117,7 +117,7 @@ python classical_ml/xg_boost_hyper.py
 python deep_learning/cnn_bilstm_focal.py
 python patch_level_dl/ensemble_patch_model.py
 ```
-
+This trains the model and generates the weights to be used in inferencing
 
 ## Citation
 
