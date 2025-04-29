@@ -1,24 +1,154 @@
-# Capstone_Group_3
+# Temporal Patterns and Pixel Precision: Satellite-Based Crop Classification Using Deep Learning and Machine Learning
 
-## Code
-- **component:** All classes and functions need to be here.
-- **main_code:** Main loop code needs to be here.
+## Project Overview
 
-## Documentation
-- **demo**
-- **fig**
-- **research paper**
+This repository contains the complete code and models developed for **crop type classification** using Sentinel-2 remote sensing imagery. We perform:
 
-## Templates
-- **Latex template**
-- **Word template**
-- **Markdown**
+- **Pixel-Level and Field-Level classification** using classical machine learning models (XGBoost, LightGBM, Random Forest, Logistic Regression).
+- **Pixel-Level and Field-Level classification** using deep learning models (1D CNN, TabTransformer, CNN + BiLSTM + Focal Loss).
+- **Patch-Level classification** using deep learning models (Multi-Channel CNN, 3D CNN, Transformer-Based model, and Ensemble Architectures).
 
-## Presentation
-- **presentation**
+The project systematically benchmarks different modeling strategies for high-resolution crop type mapping.
 
-## Reports
-- **full_report**
-- **Latex template**
-- **Word template**
-- **Markdown**
+## Data Access
+
+All datasets are hosted on Google Drive. Use the following commands to download them easily with `gdown`:
+
+```bash
+# For Classical ML Models
+pip install gdown
+gdown https://drive.google.com/uc?id=1tywwZdycgBTKgkNAZMKyCL5skaezzE3O -O final_data.parquet
+
+# For Deep Learning Models (Pixel and Field Level)
+gdown https://drive.google.com/uc?id=1QFCA6AIF85MtbO4oDtA_64I8GwjEZJd8 -O merged_dl_258_259.parquet
+
+# (If you have Patch-Level dataset too, you can add it here similarly)
+```
+
+
+> **Note:** Please ensure you downlod them into the project root directory and in a folder called Data.
+
+
+## Repository Structure
+
+```bash
+Capstone_Group_3-main/
+├── README.md
+├── Presentation/
+│   └── Capstone Plan.pptx
+├── src/
+│
+│   ├── Classical Machine Learning/
+│   │   ├── Field Level/
+│   │   │   ├── EDA Field Level.py
+│   │   │   ├── Ensemble - Voting and Stacking.py
+│   │   │   ├── SMOTE_meta.py
+│   │   │   ├── inference_classical_ensemble.py
+│   │   │   ├── xg_boost_hyper.py
+│   │   └── pixel_level/
+│   │       ├── base_ml_models.py
+│   │       ├── pixel_voting.py
+│
+│   ├── Deep Learning/
+│   │   ├── Patch Level/
+│   │   │   ├── 3D_CNN.py
+│   │   │   ├── Create Master Data.py
+│   │   │   ├── Create_Patches.py
+│   │   │   ├── Ensemble - 3D CNN.py
+│   │   │   ├── Inference_Ensemble.py
+│   │   │   ├── Multi_Channel_CNN.py
+│   │   │   ├── results_3d_cnn.py
+│   │   │   ├── results_ensemble_patching.py
+│   │   │   ├── results_multi_channel_cnn.py
+│   │   │   ├── results_transformer_patching.py
+│   │   └── Pixel_Field_Level/
+│   │       ├── TabTransformer.py
+│   │       ├── TabTransformer_Final_Field.py
+│   │       ├── best_ccn_params.py
+│   │       ├── cnn_bilstm.py
+│   │       ├── cnn_dl_hyper.py
+│   │       ├── field_acc_cnnlstm.py
+
+```
+
+## Key Models
+
+### Classical ML Models (Field-Level)
+- **XGBoost** with extensive Optuna hyperparameter tuning. ```xg_boost_hyper.py```
+- **LightGBM** and **Random Forest** with field-level aggregation. 
+- **Voting and Stacking** ensemble classifiers. ```Ensemble - Voting and Stacking.py```
+
+### Deep Learning Models (Pixel-Level and Field-Level)
+- **1D CNN** trained with Optuna for hyperparameter tuning. ```cnn_dl_hyper.py```
+- **Ensemble TabTransformer** for handling structured tabular data. ```TabTransformer.py```
+- **CNN + BiLSTM with Focal Loss** to handle temporal patterns and imbalance. ```cnn_bilstm.py```
+
+### Patch-Level Models
+- **Multi-Channel 2D CNN** for spatial texture learning.
+- **3D CNN** for spectral-temporal feature extraction.
+- **Transformer-Based Model** for attention-based patch learning.
+- **Ensemble Architecture** combining all patch-level models for robust predictions.
+
+> **Note:** The files mentioned above under Key Models are all used for modelling, to get inferences on the data and evaluations there are different files.
+
+## Results Summary
+
+| Approach         | Kappa | F1   | Key Highlights                                      |
+|------------------|-------|------|-----------------------------------------------------|
+| Classical ML     | ~0.69 | ~0.77| Voting Ensemble highest among classical models      |
+| Deep Learning    | ~0.77 | ~0.84| CNN + BiLSTM + Focal Loss strongest performer        |
+| Patch-Level DL   | ~0.66 | ~0.75| Ensemble of CNN + Transformer best patch-level model |
+
+
+## Getting Started
+
+1. Install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Download and unzip the dataset as shown above.
+
+3. Run any model of your choice. Example:
+
+```bash
+python classical_ml/xg_boost_hyper.py
+python deep_learning/cnn_bilstm_focal.py
+python patch_level_dl/ensemble_patch_model.py
+```
+
+
+## Citation
+
+If you use this work in your research, please consider citing:
+
+```bibtex
+@misc{crop_classification,
+  author = {Your Name},
+  title = {Crop Type Classification using Sentinel-2 Imagery},
+  year = {2025},
+  url = {https://github.com/yourusername/crop_classification}
+}
+```
+
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+---
+
+Feel free to fork, improve, and create pull requests!
+
+---
+
+### Maintainer
+
+- Devarsh Apurva Sheth (George Washington University)
+- Data Science Graduate Student
+- Passionate about Deep Learning and Remote Sensing 🚀
+
+---
+
+> *"Science is the poetry of reality."* – Richard Dawkins
