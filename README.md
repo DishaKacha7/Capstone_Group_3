@@ -19,10 +19,12 @@ All datasets are hosted on Google Drive. Use the following commands to download 
 pip install gdown
 gdown https://drive.google.com/uc?id=1tywwZdycgBTKgkNAZMKyCL5skaezzE3O -O final_data.parquet
 
-# For Deep Learning Models (Pixel and Field Level)
+# For Deep Learning Pixel level Models
 gdown https://drive.google.com/uc?id=1QFCA6AIF85MtbO4oDtA_64I8GwjEZJd8 -O merged_dl_258_259.parquet
 
-# (If you have Patch-Level dataset too, you can add it here similarly)
+# For Deep Learning Patch Level Models
+gdown https://drive.google.com/uc?id=1QFCA6AIF85MtbO4oDtA_64I8GwjEZJd8 -O merged_dl_258_259.parquet
+
 ```
 
 
