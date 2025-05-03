@@ -23,7 +23,7 @@ gdown https://drive.google.com/uc?id=1tywwZdycgBTKgkNAZMKyCL5skaezzE3O -O final_
 gdown https://drive.google.com/uc?id=1QFCA6AIF85MtbO4oDtA_64I8GwjEZJd8 -O merged_dl_258_259.parquet
 
 # For Deep Learning Patch Level Models
-gdown https://drive.google.com/uc?id=1QFCA6AIF85MtbO4oDtA_64I8GwjEZJd8 -O merged_dl_258_259.parquet
+Run Create_Patches.py and Create Master Data to generate the parquet, which will be used in all subsequent code files
 
 ```
 
